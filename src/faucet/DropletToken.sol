@@ -14,7 +14,14 @@ contract DropletNFT is ERC721("Droplet DAO NFT", "DROP"), Owned(msg.sender) {
     /// @notice The auction house where Droplets are minted and offered for sale
     address public auctionHouse;
 
-    constructor() { }
+    /// @notice We allow a pre-mint for early supporteres and devs
+    constructor(address[] memory reservedDroplets) {
+        uint256 _totalSupply = 0;
+        for (uint256 i = 0; i < reservedDroplets.length; ++i) {
+            _totalSupply++;
+            _mint(reservedDroplets[i], _totalSupply);
+        }
+    }
 
     function tokenURI(uint256 tokenId) public pure override returns (string memory) {
         return string.concat("https://droplet.wtf/tokenUris/", toString(tokenId));

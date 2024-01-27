@@ -29,14 +29,18 @@ contract DropletFaucet {
     Auction public auction;
     uint256 internal lastSettledAuction;
 
+    // Address of the DAO
+    address public DAO;
     // All Dao proceeds owed, in Ether
     uint256 public DAORake;
 
     uint256 internal constant DRIP_PER_DAY_PER_DROPLET = 10 wei;
 
-    constructor(address _dropletNFT, address _dripToken) {
+    constructor(address _dropletNFT, address _dripToken, address _dao) {
         dropletNFT = IERC721(_dropletNFT);
         dripToken = IERC20(_dripToken);
+
+        DAO = _dao;
 
         GENESIS = block.timestamp;
     }
@@ -61,6 +65,7 @@ contract DropletFaucet {
         auction = Auction({ dropletId: dropletId, amount: 0, startTime: startTime, endTime: endTime, bidder: payable(0), settled: false });
     }
 
+    /// @notice Starts the next auction, if possible
     function startNextAuction() external {
         require(auction.settled = true, "DropletFaucet: Previous Auction not settled");
         if (GENESIS + FREE_FLOW_DURATION > block.timestamp) {
@@ -122,6 +127,7 @@ contract DropletFaucet {
         emit Bid(msg.sender, msg.value, dropletId);
     }
 
+    /// @notice Allow anyone to settle the auction after it has ended
     function settleAuction() external {
         Auction memory _auction = auction;
 
@@ -141,5 +147,17 @@ contract DropletFaucet {
         dropletNFT.transferFrom(address(this), _auction.bidder, _auction.dropletId);
         
         emit Settled(_auction.dropletId, _auction.bidder, _auction.amount);
+    }
+
+    /// @notice Allows the DAO to withdraw all proceeds from the faucet
+    function withdrawProceeds() external {
+        require(msg.sender == DAO, "DropletFaucet: Only the DAO can call this function");
+
+        // Send all Ether to the DAO
+        address payable dao = payable(DAO);
+        dao.transfer(address(this).balance);
+
+        // Send all DRIP back to the DAO
+        dripToken.transfer(dao, dripToken.balanceOf(address(this)));
     }
 }
