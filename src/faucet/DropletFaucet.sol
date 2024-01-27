@@ -11,10 +11,6 @@ contract DropletFaucet {
     uint256 constant FREE_FLOW_DURATION = 50 days;
     uint256 immutable GENESIS;
 
-    event Bid(address indexed bidder, uint256 indexed amount, uint256 auction);
-    event Extended(uint256 indexed endTime, uint256 indexed newTopBid);
-    event Settled(uint256 indexed auction, address indexed winner, uint256 indexed amount);
-
     struct Auction {
         // ID for the Droplet (ERC721 token ID)
         uint256 dropletId;
@@ -45,6 +41,17 @@ contract DropletFaucet {
         GENESIS = block.timestamp;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event Bid(address indexed bidder, uint256 indexed amount, uint256 auction);
+    event Extended(uint256 indexed endTime, uint256 indexed newTopBid);
+    event Settled(uint256 indexed auction, address indexed winner, uint256 indexed amount);
+
+    /*//////////////////////////////////////////////////////////////
+                            EXT AUCTION LOGIC
+    //////////////////////////////////////////////////////////////*/
     function startAuction() internal {
         uint256 dropletId = dropletNFT.mint(address(this));
 
@@ -53,11 +60,6 @@ contract DropletFaucet {
 
         auction = Auction({ dropletId: dropletId, amount: 0, startTime: startTime, endTime: endTime, bidder: payable(0), settled: false });
     }
-
-
-    /*//////////////////////////////////////////////////////////////
-                            EXT AUCTION LOGIC
-    //////////////////////////////////////////////////////////////*/
 
     function startNextAuction() external {
         require(auction.settled = true, "DropletFaucet: Previous Auction not settled");
