@@ -1,39 +1,44 @@
-// SPDX-License-Identifier: GPL-3.0
+/// SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {ERC721} from "solmate/tokens/ERC721.sol";
+import {ERC721} from "lib/solmate/src/tokens/ERC721.sol";
+import {Owned} from "lib/solmate/src/auth/Owned.sol";
 
-import {IDropletDescriptorMinimal} from "../interfaces/IDropletDescriptorMinimal.sol";
-import {IDropletSeeder} from "../interfaces/IDropletSeeder.sol";
+contract DropletNFT is ERC721("Droplet DAO NFT", "DROP"), Owned(msg.sender) {
+    constructor() {}
 
-contract DropletToken is ERC721("Droplet DAO NFT", "DROP") {
-    // The Nouns token URI descriptor
-    IDropletDescriptorMinimal public descriptor;
-
-    // The Nouns token seeder
-    IDropletSeeder public seeder;
-
-    // The noun seeds
-    mapping(uint256 => IDropletSeeder.Seed) public seeds;
-
-    constructor(IDropletDescriptorMinimal _descriptor, IDropletSeeder _seeder) {
-        descriptor = _descriptor;
-        seeder = _seeder;
+    function tokenURI(uint256 tokenId) public override pure returns (string memory) {
+        return string.concat("https://droplet.wtf/tokenUris/", uint2str(tokenId));
     }
 
-    /**
-     * @notice A distinct Uniform Resource Identifier (URI) for a given asset.
-     * @dev See {IERC721Metadata-tokenURI}.
-     */
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        return descriptor.tokenURI(tokenId, seeds[tokenId]);
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 
-    /**
-     * @notice Similar to `tokenURI`, but always serves a base64 encoded data URI
-     * with the JSON contents directly inlined.
-     */
-    function dataURI(uint256 tokenId) public view returns (string memory) {
-        return descriptor.dataURI(tokenId, seeds[tokenId]);
+    uint256 public counter;
+
+    function mint(address to) external onlyOwner returns (uint256) {
+        counter++;
+        _mint(to, counter);
+
+        return counter;
     }
 }

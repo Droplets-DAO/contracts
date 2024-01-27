@@ -10,7 +10,7 @@ import {IERC4626} from "src/interfaces/IERC4626.sol";
 
 interface ConversionOracle {
   // Returns the price of the LST in terms if ETH, sclaed to 1 wad
-  function price() external returns (uint256);
+  function price() external view returns (uint256);
 }
 
 // This contract breaks ERC4626 in several places, which is why dEth works as an actual
@@ -159,8 +159,6 @@ contract wLST is ERC20, Owned {
     
     uint256 assets = convertToAssets(shares);
 
-    tokensOwned[lst] -= assets;
-
     fraction.numerator -= uint128(assets);
     fraction.denominator -= uint128(shares);
 
@@ -168,6 +166,8 @@ contract wLST is ERC20, Owned {
 
     uint256 price = ConversionOracle(conversionRate[lst]).price();
     uint256 lstOwed = (assets * WAD) / price;
+    tokensOwned[lst] -= lstOwed;
+
     IERC20(lst).transfer(reciever, lstOwed);
   }
 }
