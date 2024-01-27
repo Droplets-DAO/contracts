@@ -131,5 +131,6 @@ interface IERC721 {
      */
     function isApprovedForAll(address owner, address operator) external view returns (bool);
 
-    function mint(address reciever) external returns (uint256 tokenId); 
+    function mint(address reciever) external returns (uint256 tokenId);
+    function totalSupply() external view returns (uint256);
 }
