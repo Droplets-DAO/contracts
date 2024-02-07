@@ -45,7 +45,7 @@ ownerOf: public(HashMap[uint256, address])
 balanceOf: public(HashMap[address, uint256])
 
 get_approved: public(HashMap[uint256, address])
-is_approved_for_all: public(HashMap[address, HashMap[address, bool]])
+isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
 
 owner: public(address)
 minters: public(HashMap[address, bool])
@@ -75,7 +75,7 @@ def approve(spender: address, id: uint256):
     """
     owner: address = self.ownerOf[id]
 
-    assert msg.sender == owner or self.is_approved_for_all[owner][msg.sender], "NOT_AUTHORIZED"
+    assert msg.sender == owner or self.isApprovedForAll[owner][msg.sender], "NOT_AUTHORIZED"
 
     self.get_approved[id] = spender
 
@@ -87,7 +87,7 @@ def setApprovalForAll(operator: address, approved: bool):
         @param operator The address approved to send all nfts
         @param approved Toggle for global approval
     """
-    self.is_approved_for_all[msg.sender][operator] = approved
+    self.isApprovedForAll[msg.sender][operator] = approved
 
     log ApprovalForAll(msg.sender, operator, approved)
 
@@ -96,7 +96,7 @@ def transfer_from(_from: address, to: address, id: uint256):
     assert _from == self.ownerOf[id], "WRONG_FROM"
     assert to != empty(address), "INVALID_RECIPIENT"
 
-    assert msg.sender == _from or self.is_approved_for_all[_from][msg.sender] or msg.sender == self.get_approved[id], "Not Authorized"
+    assert msg.sender == _from or self.isApprovedForAll[_from][msg.sender] or msg.sender == self.get_approved[id], "Not Authorized"
 
     self.balanceOf[_from] = unsafe_sub(self.balanceOf[_from], 1)
     self.balanceOf[to] = unsafe_sub(self.balanceOf[to], 1)
