@@ -88,14 +88,29 @@ def test_faucet(droplet_nft, drip, faucet, admin, accounts):
     with boa.reverts("DropletFaucet: Auction already settled"):
         faucet.settle_auction(sender=admin)
 
-def test_start_after_free_flow(droplet_nft, drip, faucet, admin, accounts):
+def test_start_after_free_flow(mock_drip, mock_faucet, admin, accounts):
     """
         Test a basic auction scenario
     """
 
-    assert faucet.drip_token() == drip.address
-    assert faucet.droplet() == droplet_nft.address
+    faucet = mock_faucet
+    boa.env.set_balance(admin, 1000 * 10 ** 18)
+    genesis = faucet.GENESIS()
+    free_flow = faucet.FREE_FLOW_DURATION()
 
-    faucet.start_next_auction(sender=accounts[5])
+    boa.env.time_travel(genesis + free_flow + 1)
+    faucet.start_next_auction(sender=admin)
+    faucet.bid(1, value=(1* 10 ** 18), sender=admin)
+    boa.env.time_travel(86401)
+    faucet.settle_auction(sender=admin)
 
- 
+    with boa.reverts("Faucet is on cooldown"):
+        faucet.start_next_auction(sender=admin)
+
+    boa.env.time_travel((86400 * 3) + 100)
+    mock_drip.mint(admin, 1000 * 10 ** 18, sender=admin)
+    mock_drip.approve(faucet.address, 1000 * 10 ** 18, sender=admin)
+    faucet.start_next_auction(sender=admin)
+    faucet.bid(2, value=(1* 10 ** 18), sender=admin)
+    boa.env.time_travel(86401)
+    faucet.settle_auction(sender=admin)

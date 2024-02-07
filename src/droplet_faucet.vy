@@ -1,4 +1,4 @@
-# @pragma 0.3.10
+# @version 0.3.10
 
 """
 @title droplet faucet
@@ -64,8 +64,8 @@ struct Auction:
 auction: public(Auction)
 last_settled_auction: uint256
 
-drip_token: public(ERC20)
-droplet: public(address)
+drip_token: public(immutable(ERC20))
+droplet: public(immutable(address))
 
 dao: public(address)
 dao_treasure: public(uint256)
@@ -76,8 +76,8 @@ DRIP_PER_DROPLET: public(constant(uint256)) = 100
 
 @external
 def __init__(_droplet: address, _drip: address, _dao: address):
-    self.droplet = _droplet
-    self.drip_token = ERC20(_drip)
+    droplet = _droplet
+    drip_token = ERC20(_drip)
     self.dao = _dao
 
     GENESIS = block.timestamp
@@ -93,7 +93,7 @@ def __init__(_droplet: address, _drip: address, _dao: address):
 
 @internal
 def start_auction():
-    droplet_id: uint256 = Droplet(self.droplet).mint(self)
+    droplet_id: uint256 = Droplet(droplet).mint(self)
 
     start_time: uint256 = block.timestamp
     end_time: uint256 = start_time + 86400
@@ -118,13 +118,14 @@ def start_next_auction():
         assert self.last_settled_auction + (86400 * 3) < block.timestamp, "Faucet is on cooldown"
         time_since: uint256 = block.timestamp - self.last_settled_auction
 
-        total_per_day: uint256 = Droplet(self.droplet).totalSupply() * DRIP_PER_DROPLET
-        c: uint256 = (total_per_day * 40) / 100
-        r: uint256 = c / (4 * 86400)
+        total_per_day: uint256 = Droplet(droplet).totalSupply() * DRIP_PER_DROPLET
+        # Price to start the next auction is equal to 30% of the total drip generated in the past day
+        # decaying linearly over the next 4 days 
+        thirty_percent: uint256 = (total_per_day * 30) / 100
+        price: uint256 = thirty_percent - (thirty_percent * time_since) / (86400 * 4)
 
-        if r * time_since < c:
-            cost: uint256 = c - (r * time_since)
-            self.drip_token.transferFrom(msg.sender, self,  cost)
+        if price > 0:
+            drip_token.transferFrom(msg.sender, self, price)
         
         self.start_auction()
 
@@ -173,7 +174,7 @@ def settle_auction():
     self.last_settled_auction = block.timestamp
 
     # Send the NFT to the winner
-    ERC721(self.droplet).transferFrom(self, _auction.bidder, _auction.dropletId)
+    ERC721(droplet).transferFrom(self, _auction.bidder, _auction.dropletId)
 
     log Settled(_auction.dropletId, _auction.bidder, _auction.amount)
 

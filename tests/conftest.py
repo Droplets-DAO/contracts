@@ -37,3 +37,15 @@ def faucet(admin, drip, blast, droplet_nft):
         faucet = boa.load('src/droplet_faucet.vy', droplet_nft.address, drip.address, admin)
         droplet_nft.set_minter(faucet.address, True, sender=admin)
         return faucet
+
+@pytest.fixture(scope="session")
+def mock_drip(admin):
+    with boa.env.prank(admin):
+        return boa.load('tests/mocks/mock_erc20.vy', "Mock DRIP", "DRIP", 18)
+
+@pytest.fixture(scope="session")
+def mock_faucet(admin, mock_drip, blast, droplet_nft):
+    with boa.env.prank(admin):
+        faucet = boa.load('src/droplet_faucet.vy', droplet_nft.address, mock_drip.address, admin)
+        droplet_nft.set_minter(faucet.address, True, sender=admin)
+        return faucet
