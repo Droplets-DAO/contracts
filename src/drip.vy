@@ -124,3 +124,18 @@ def permit(owner: address, spender: address, amount: uint256, deadline: uint256,
 
   self.allowance[owner][spender] = amount
   log Approval(owner, spender, amount)
+
+################################################################
+#                          EMISSIONS                           #
+################################################################
+@external
+def mint(to: address, amount: uint256):
+  """
+    @notice Mint new tokens
+    @param to The address to mint the tokens to
+    @param amount The amount of tokens to mint
+  """
+  self.balanceOf[to] = unsafe_add(self.balanceOf[to], amount)
+  self.totalSupply = unsafe_add(self.totalSupply, amount)
+
+  log Transfer(empty(address), to, amount)

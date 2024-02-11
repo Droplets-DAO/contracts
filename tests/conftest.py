@@ -49,3 +49,4 @@ def mock_faucet(admin, mock_drip, blast, droplet_nft):
         faucet = boa.load('src/droplet_faucet.vy', droplet_nft.address, mock_drip.address, admin)
         droplet_nft.set_minter(faucet.address, True, sender=admin)
         return faucet
+    
