@@ -6,10 +6,11 @@ from hypothesis import (
     strategies as st,
 )
 
-def test_nft_mint(droplet_nft, admin, accounts):
+def test_nft_mint(droplet_nft, admin, drip, accounts):
     """
         Test the mint function of the droplet_nft with reverts and auth checks
     """
+    droplet_nft.init_drip(drip, sender=admin)
     assert droplet_nft.totalSupply() == 0
 
     with boa.env.prank(admin):
@@ -34,6 +35,7 @@ def test_faucet(droplet_nft, drip, faucet, admin, accounts):
     """
         Test a basic auction scenario
     """
+    droplet_nft.init_drip(drip, sender=admin)
 
     assert faucet.drip_token() == drip.address
     assert faucet.droplet() == droplet_nft.address
@@ -88,10 +90,11 @@ def test_faucet(droplet_nft, drip, faucet, admin, accounts):
     with boa.reverts("DropletFaucet: Auction already settled"):
         faucet.settle_auction(sender=admin)
 
-def test_start_after_free_flow(mock_drip, mock_faucet, admin, accounts):
+def test_start_after_free_flow(mock_drip, drip, droplet_nft, mock_faucet, admin, accounts):
     """
         Test a basic auction scenario
     """
+    droplet_nft.init_drip(drip, sender=admin)
 
     faucet = mock_faucet
     boa.env.set_balance(admin, 1000 * 10 ** 18)

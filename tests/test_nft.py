@@ -6,7 +6,9 @@ from hypothesis import (
     strategies as st,
 )
 
-def test_minters(admin, accounts, droplet_nft):
+def test_minters(admin, drip, accounts, droplet_nft):
+    droplet_nft.init_drip(drip, sender=admin)
+
     assert droplet_nft.minters(admin)
 
     id = droplet_nft.mint(accounts[0], sender=admin)
@@ -22,7 +24,9 @@ def test_minters(admin, accounts, droplet_nft):
     assert (id + 1) == id2
     assert droplet_nft.ownerOf(id2) == accounts[2]
 
-def test_transfer(admin, accounts, droplet_nft):
+def test_transfer(admin, accounts, drip, droplet_nft):
+    droplet_nft.init_drip(drip, sender=admin)
+
     id = droplet_nft.mint(accounts[0], sender=admin)
     assert droplet_nft.ownerOf(id) == accounts[0]
 
@@ -40,7 +44,9 @@ def test_transfer(admin, accounts, droplet_nft):
     with boa.reverts("INVALID_RECIPIENT"):
         droplet_nft.transferFrom(accounts[2], "0x0000000000000000000000000000000000000000", id, sender=accounts[0])
 
-def test_approvals(admin, accounts, droplet_nft):
+def test_approvals(admin, accounts, drip, droplet_nft):
+    droplet_nft.init_drip(drip, sender=admin)
+
     id = droplet_nft.mint(accounts[0], sender=admin)
     assert droplet_nft.ownerOf(id) == accounts[0]
 

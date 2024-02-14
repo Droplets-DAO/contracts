@@ -22,14 +22,14 @@ def blast(admin):
         return blast
     
 @pytest.fixture(scope="session")
-def drip(admin):
-    with boa.env.prank(admin):
-        return boa.load('src/drip.vy')
-    
-@pytest.fixture(scope="session")
 def droplet_nft(admin):
     with boa.env.prank(admin):
         return boa.load('src/droplet_nft.vy')
+
+@pytest.fixture(scope="session")
+def drip(admin, droplet_nft):
+    with boa.env.prank(admin):
+        return boa.load('src/drip.vy', droplet_nft.address)
 
 @pytest.fixture(scope="session")
 def faucet(admin, drip, blast, droplet_nft):

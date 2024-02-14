@@ -129,6 +129,8 @@ def bond_nft(id: uint256) -> uint256:
 
     error, new_spot_price, new_delta, output_amount, protocol_fee, royalty_amount = LSSVM2Pair(pair).getSellNFTQuote(id, 1)
 
+    assert error == CurveErrors.OK, "Error getting quote"
+
     # Mint them a bond
     self.nft_bonds[bond_id] = Bond({
         owner: msg.sender,
@@ -160,6 +162,8 @@ def redeem_bond(bond_id: uint256, id: uint256):
     royalty_amount: uint256 = 0
 
     error, new_spot_price, new_delta, output_amount, protocol_fee, royalty_amount = LSSVM2Pair(pair).getSellNFTQuote(0, 1)
+
+    assert error == CurveErrors.OK, "Error getting quote"
 
     if output_amount > bond.price:
         # This means we made a profit, so we pay them 50% of fees + give them back an NFT

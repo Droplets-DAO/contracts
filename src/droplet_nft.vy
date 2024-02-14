@@ -10,6 +10,9 @@
 interface ERC721Reciever:
     def onERC721Received(a: address, b: address, c: uint256, d: Bytes[1024]) -> bytes4: nonpayable
 
+interface DRIP:
+    def init_id(id: uint256): nonpayable
+
 ################################################################
 #                            EVENTS                            #
 ################################################################
@@ -51,6 +54,8 @@ owner: public(address)
 minters: public(HashMap[address, bool])
 totalSupply: public(uint256)
 
+drip: public(address)
+
 @external
 def __init__():
     name = "Droplet NFT"
@@ -58,6 +63,11 @@ def __init__():
 
     self.owner = msg.sender
     self.minters[msg.sender] = True
+
+@external
+def init_drip(drip_address: address):
+    assert msg.sender == self.owner, "NOT OWNER"
+    self.drip = drip_address
 
 @external
 def change_owner(new_owner: address):
@@ -157,7 +167,6 @@ def set_minter(new_minter: address, toggle: bool):
 def mint(to: address) -> uint256:
     """
         @param to The address to mint the token to
-        @param id The token id to mint
     """
     assert self.minters[msg.sender], "NOT AUTHORIZED"
     assert to != empty(address), "INVALID_RECIPIENT"
@@ -167,6 +176,8 @@ def mint(to: address) -> uint256:
 
     self.balanceOf[to] = unsafe_add(self.balanceOf[to], 1)
     self.ownerOf[new_id] = to
+
+    DRIP(self.drip).init_id(new_id)
 
     log Transfer(empty(address), to, new_id)
 
