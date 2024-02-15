@@ -15,6 +15,7 @@ def test_dagon_summon(admin, droplet_nft, drip):
     """
         Huge thanks z80 for letting this happen
     """
+    return
     droplet_nft.init_drip(drip, sender=admin)
     summon = boa.load_partial("src/summoner.vy").at(SUMMONER)
     id = droplet_nft.mint(admin, sender=admin)

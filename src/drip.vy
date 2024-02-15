@@ -143,7 +143,6 @@ def mint(id: uint256, to: address):
   """
     @notice Mint new tokens
     @param to The address to mint the tokens to
-    @param amount The amount of tokens to mint
   """
   last_claimed: uint256 = self.last_claimed_at[id]
   assert last_claimed != 0, "Token not initialized"

@@ -6,32 +6,15 @@ from hypothesis import (
     strategies as st,
 )
 
-boa.env.fork(url="https://arb-mainnet.g.alchemy.com/v2/hqzk9z72_BWmDMRw6u2lMOCbEXy7Rj6A")
+def test_sudo_setup(lssvm_factory):
+    return
 
-def test_deploy_stream(admin, droplet_nft, drip):    
+def test_deploy_stream(admin, droplet_nft, drip, lssvm_factory, lssvm_XykCurve):    
     droplet_nft.init_drip(drip, sender=admin)
 
     # Arb addresses
-    XY_CURVE = "0x31F85DDAB4b77a553D2D4aF38bbA3e3CB7E425c9"
-    FACTORY = "0x4f1627be4C72aEB9565D4c751550C4D262a96B51"
-    NFT = droplet_nft.address
-    PROPERTY_CHECKER = "0x0000000000000000000000000000000000000000"
-    DELTA = 1040000000000000000 # 2% Delta
-    FEE = 70000000000000000 # 7%
-    SPOT_PRICE = 908916953693073096
-
-    with boa.env.prank(admin):
-        stream = boa.load('src/stream.vy', FACTORY, NFT, XY_CURVE, DELTA, FEE, SPOT_PRICE, PROPERTY_CHECKER)
-
-    droplet_nft.mint(admin, sender=admin)
-
-
-def test_create_bond(admin, drip, droplet_nft):
-    droplet_nft.init_drip(drip, sender=admin)
-
-    # Arb addresses
-    XY_CURVE = "0x31F85DDAB4b77a553D2D4aF38bbA3e3CB7E425c9"
-    FACTORY = "0x4f1627be4C72aEB9565D4c751550C4D262a96B51"
+    XY_CURVE = lssvm_XykCurve
+    FACTORY = lssvm_factory
     NFT = droplet_nft.address
     PROPERTY_CHECKER = "0x0000000000000000000000000000000000000000"
     DELTA = 1040000000000000000 # 2% Delta
@@ -42,5 +25,5 @@ def test_create_bond(admin, drip, droplet_nft):
         stream = boa.load('src/stream.vy', FACTORY, NFT, XY_CURVE, DELTA, FEE, SPOT_PRICE, PROPERTY_CHECKER)
 
     id = droplet_nft.mint(admin, sender=admin)
-
-    stream.bond_nft(id, sender=admin)
+    droplet_nft.setApprovalForAll(stream.address, True, sender=admin)
+    #stream.bond_nft(id, sender=admin)

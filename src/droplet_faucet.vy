@@ -166,6 +166,23 @@ def settle_auction():
     assert _auction.end_time < block.timestamp, "DropletFaucet: Auction has not ended"
     assert not _auction.settled, "DropletFaucet: Auction already settled"
 
+    if _auction.bidder == empty(address):
+        # If no one bid, simply restart the auction, as the auction is not settled
+        start_time: uint256 = block.timestamp
+        end_time: uint256 = start_time + 86400
+
+        self.auction = Auction({
+            dropletId: _auction.dropletId,
+            amount: 0, # Minimum Bid Constant?
+            start_time: start_time,
+            end_time: end_time,
+            bidder: empty(address),
+            settled: False
+        })
+
+        log Started(_auction.dropletId, start_time, end_time)
+        return
+
     # DAO takes 100% of proceeds
     self.dao_treasure += _auction.amount
 
