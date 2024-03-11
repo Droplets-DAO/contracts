@@ -162,7 +162,13 @@ def bid(droplet_id: uint256):
     lastBidder: address = _auction.bidder
 
     if lastBidder != empty(address):
-        send(lastBidder, _auction.amount)
+        success: bool = raw_call(
+            lastBidder,
+            b"",
+            gas=2400,
+            value=_auction.amount,
+            revert_on_failure=False
+        )
 
     self.auction.amount = msg.value
     self.auction.bidder = msg.sender

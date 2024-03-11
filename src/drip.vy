@@ -217,7 +217,7 @@ def mint(id: uint256, to: address):
     _total_supply = total_supply - i
     tokens_owed += (96 * 10 ** 18) / _total_supply
 
-  tokens_owed += (96 * 10 ** 18) * remainder / 86400
+  tokens_owed += (96 * 10 ** 18) * (remainder / 86400) / total_supply
 
   self.last_claimed_at[id] = block.timestamp
 
