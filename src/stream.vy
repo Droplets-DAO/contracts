@@ -45,6 +45,7 @@ interface LSSVM2Pair:
     ): view
 
     def withdrawERC721(nft: address, nftIds: DynArray[uint256, 1]): nonpayable
+    def withdrawETH(amount: uint256): nonpayable
 
 ################################################################
 #                           STORAGE                            #
@@ -95,6 +96,7 @@ def __init__(_factory: address, _nft: address, _curve: address, _delta: uint128,
     )
 
     ERC721(_nft).setApprovalForAll(pair, True)
+    ERC721(_nft).setApprovalForAll(factory, True)
 
 @payable
 @external
@@ -104,6 +106,13 @@ def __default__():
     """
     self.fees_earned += msg.value
     
+@external
+def onERC721Received(operator: address, _from: address, tokenId: uint256, data: Bytes[1024]) -> bytes4:
+    """
+        @notice This is the function that the NFTs will call when they are sent to the contract
+    """
+    return method_id("onERC721Received(address,address,uint256,bytes)", output_type=bytes4)
+
 @external
 def bond_nft(id: uint256) -> uint256:
     """
@@ -127,7 +136,7 @@ def bond_nft(id: uint256) -> uint256:
     protocol_fee: uint256 = 0
     royalty_amount: uint256 = 0
 
-    error, new_spot_price, new_delta, output_amount, protocol_fee, royalty_amount = LSSVM2Pair(pair).getSellNFTQuote(id, 1)
+    error, new_spot_price, new_delta, output_amount, protocol_fee, royalty_amount = LSSVM2Pair(pair).getSellNFTQuote(id, 0)
 
     assert error == CurveErrors.OK, "Error getting quote"
 
@@ -161,7 +170,7 @@ def redeem_bond(bond_id: uint256, id: uint256):
     protocol_fee: uint256 = 0
     royalty_amount: uint256 = 0
 
-    error, new_spot_price, new_delta, output_amount, protocol_fee, royalty_amount = LSSVM2Pair(pair).getSellNFTQuote(0, 1)
+    error, new_spot_price, new_delta, output_amount, protocol_fee, royalty_amount = LSSVM2Pair(pair).getSellNFTQuote(id, 0)
 
     assert error == CurveErrors.OK, "Error getting quote"
 
@@ -169,11 +178,14 @@ def redeem_bond(bond_id: uint256, id: uint256):
         # This means we made a profit, so we pay them 50% of fees + give them back an NFT
         # We may need to check on this later, not entirely sure this works
         fees_owed: uint256 = self.fees_earned - bond.fee_snapshot
-        send(msg.sender, fees_owed)
 
         # Pay them back their NFT
-        LSSVM2Pair(pair).withdrawERC721(bonded_nft, [id])
-        ERC721(bonded_nft).transferFrom(self, msg.sender, id)
+        # also stop this from being counted as fees
+        current_fees_earned: uint256 = self.fees_earned
+        LSSVM2Pair(pair).withdrawETH(new_spot_price)
+        self.fees_earned = current_fees_earned
+
+        send(msg.sender, fees_owed + new_spot_price)
 
         # delete the bond
         self.nft_bonds[bond_id] = Bond({

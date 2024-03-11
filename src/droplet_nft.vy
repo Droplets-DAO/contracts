@@ -13,6 +13,15 @@ interface ERC721Reciever:
 interface DRIP:
     def init_id(id: uint256): nonpayable
 
+interface BLAST:
+    def configureClaimableGas(): nonpayable
+    def configureClaimableYield(): nonpayable
+    def claimAllYield(contractAddress: address, recipientOfYield: address) -> uint256: nonpayable
+    def claimAllGas(contractAddress: address, recipientOfGas: address) -> uint256: nonpayable
+    
+interface IBLASTPointsOperator:
+    def configurePointsOperator(op: address): nonpayable
+
 ################################################################
 #                            EVENTS                            #
 ################################################################
@@ -54,6 +63,8 @@ owner: public(address)
 minters: public(HashMap[address, bool])
 totalSupply: public(uint256)
 
+claimed_premints: public(bool)
+
 drip: public(address)
 
 @external
@@ -61,8 +72,29 @@ def __init__():
     name = "Droplet NFT"
     symbol = "DROP"
 
+    BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
+    BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
+
+    IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+
     self.owner = msg.sender
     self.minters[msg.sender] = True
+
+@external
+def claim_premints():
+    assert not self.claimed_premints, "ALREADY CLAIMED"
+    for i in range(6):
+        self._mint(msg.sender)
+
+    self.claimed_premints = True
+
+
+@external
+def claim_money(account: address):
+    assert msg.sender == self.owner, "NOT OWNER"
+
+    BLAST(0x4300000000000000000000000000000000000002).claimAllYield(self, account)
+    BLAST(0x4300000000000000000000000000000000000002).claimAllGas(self, account)
 
 @external
 def init_drip(drip_address: address):
@@ -139,12 +171,19 @@ def safeTransferFrom(_from: address, to: address, id: uint256, data: Bytes[1024]
 
     assert to.codesize == 0 or ERC721Reciever(to).onERC721Received(msg.sender, _from, id, data) == method_id("onERC721Received(address,address,uint256,bytes)", output_type=bytes4), "TRANSFER_REJECTED"
 
+@external
+@view
+def tokenURI(token_id: uint256) -> String[512]:
+    return concat("https://droplet.wtf/droplets/", uint2str(token_id), ".json")
+
 ################################################################
 #                            ERC165                            #
 ################################################################
-_SUPPORTED_INTERFACES: constant(bytes4[2]) = [
+_SUPPORTED_INTERFACES: constant(bytes4[4]) = [
     0x01FFC9A7, # The ERC-165 identifier for ERC-165.
     0x80AC58CD, # The ERC-165 identifier for ERC-721.
+    0x5B5E139F,  # The ERC-165 identifier for ERC-721 Metadata.
+    0x780E9D63 # The ERC-165 identifier for the ERC-721 enumeration extension.
 ]
 
 @external
@@ -165,6 +204,13 @@ def set_minter(new_minter: address, toggle: bool):
 
 @external
 def mint(to: address) -> uint256:
+    """
+        @param to The address to mint the token to
+    """
+    return self._mint(to)
+
+@internal
+def _mint(to: address) -> uint256:
     """
         @param to The address to mint the token to
     """

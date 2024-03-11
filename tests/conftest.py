@@ -133,3 +133,17 @@ def lssvm_factory(admin,lssvm_erc1155_erc20, lssvm_erc1155_eth, lssvm_erc721_erc
         
         factory.setBondingCurveAllowed(lssvm_XykCurve, True, sender=admin)
         return factory
+
+@pytest.fixture(scope="session")
+def stream(admin, droplet_nft, lssvm_factory, lssvm_XykCurve):
+    # Arb addresses
+    XY_CURVE = lssvm_XykCurve
+    FACTORY = lssvm_factory
+    NFT = droplet_nft.address
+    PROPERTY_CHECKER = "0x0000000000000000000000000000000000000000"
+    DELTA = 1040000000000000000 # 2% Delta
+    FEE = 70000000000000000 # 7%
+    SPOT_PRICE = 908916953693073096
+
+    with boa.env.prank(admin):
+        return boa.load('src/stream.vy', FACTORY, NFT, XY_CURVE, DELTA, FEE, SPOT_PRICE, PROPERTY_CHECKER)

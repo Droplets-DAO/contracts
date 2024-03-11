@@ -6,6 +6,20 @@
 @license GNU Affero General Public License v3.0
 """
 
+from vyper.interfaces import ERC721
+
+interface BLAST:
+    def configureClaimableGas(): nonpayable
+    def configureClaimableYield(): nonpayable
+    def claimAllYield(contractAddress: address, recipientOfYield: address) -> uint256: nonpayable
+    def claimAllGas(contractAddress: address, recipientOfGas: address) -> uint256: nonpayable
+    
+interface IBLASTPointsOperator:
+    def configurePointsOperator(op: address): nonpayable
+
+interface Droplet:
+    def totalSupply() -> uint256: view
+
 ################################################################
 #                            EVENTS                            #
 ################################################################
@@ -39,6 +53,7 @@ nonces: public(HashMap[address, uint256])
 ################################################################
 
 droplet_nft: public(immutable(address))
+fee_controller: public(immutable(address))
 
 @external
 def __init__(droplet_nft_address: address):
@@ -46,6 +61,21 @@ def __init__(droplet_nft_address: address):
   symbol = "DRIP"
   DOMAIN_SEPARATOR = keccak256(_abi_encode("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)", keccak256("DRIP Token"), keccak256("1"), chain.id, self))
   droplet_nft = droplet_nft_address
+
+  BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
+  BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
+
+  IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+
+  fee_controller = msg.sender
+
+
+@external
+def claim_money(account: address):
+    assert msg.sender == fee_controller, "NOT OWNER"
+
+    BLAST(0x4300000000000000000000000000000000000002).claimAllYield(self, account)
+    BLAST(0x4300000000000000000000000000000000000002).claimAllGas(self, account)
 
 # @dev Constant used as part of the ECDSA recovery function.
 _MALLEABILITY_THRESHOLD: constant(bytes32) = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
@@ -138,18 +168,57 @@ def init_id(tokenId: uint256):
   assert msg.sender == droplet_nft, "Only Droplet can init nfts"
   self.last_claimed_at[tokenId] = block.timestamp
 
+@view
+@external
+def preview_mint(id: uint256, to: address) -> uint256:
+  """
+    @notice Preview the amount of tokens that can be minted
+    @param to The address to mint the tokens to
+
+    @return The amount of tokens that can be minted
+  """
+  last_claimed: uint256 = self.last_claimed_at[id]
+  assert last_claimed != 0, "Token not initialized"
+  time_elapsed: uint256 = block.timestamp - last_claimed
+  days_elapsed: uint256 = time_elapsed // 86400
+  remainder: uint256 = time_elapsed % 86400
+
+  total_supply: uint256 = Droplet(droplet_nft).totalSupply()
+  
+  tokens_owed: uint256 = 0
+
+  for i in range(days_elapsed):
+    _total_supply = total_supply - i
+    tokens_owed += (96 * 10 ** 18) / _total_supply
+
+  tokens_owed += (96 * 10 ** 18) * remainder / 86400
+
+  return amount
+
+
 @external
 def mint(id: uint256, to: address):
   """
     @notice Mint new tokens
     @param to The address to mint the tokens to
   """
+  assert msg.sender == ERC721(droplet_nft).ownerOf(id), "Only the owner of the NFT can mint"
   last_claimed: uint256 = self.last_claimed_at[id]
   assert last_claimed != 0, "Token not initialized"
   time_elapsed: uint256 = block.timestamp - last_claimed
+  days_elapsed: uint256 = time_elapsed // 86400
+  remainder: uint256 = time_elapsed % 86400
 
-  # Scale up tokens for decimal points
-  amount: uint256 = (time_elapsed / 10) * 10 ** 18
+  total_supply: uint256 = Droplet(droplet_nft).totalSupply()
+  
+  tokens_owed: uint256 = 0
+
+  for i in range(days_elapsed):
+    _total_supply = total_supply - i
+    tokens_owed += (96 * 10 ** 18) / _total_supply
+
+  tokens_owed += (96 * 10 ** 18) * remainder / 86400
+
   self.last_claimed_at[id] = block.timestamp
 
   self.balanceOf[to] = unsafe_add(self.balanceOf[to], amount)

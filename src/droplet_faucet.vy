@@ -17,9 +17,14 @@ interface Droplet:
     def mint(reciever: address) -> uint256: nonpayable
     def totalSupply() -> uint256: view
 
-interface Blast:
+interface BLAST:
     def configureClaimableGas(): nonpayable
-    def configureGovernor(governor: address): nonpayable
+    def configureClaimableYield(): nonpayable
+    def claimAllYield(contractAddress: address, recipientOfYield: address) -> uint256: nonpayable
+    def claimAllGas(contractAddress: address, recipientOfGas: address) -> uint256: nonpayable
+
+interface IBLASTPointsOperator:
+    def configurePointsOperator(op: address): nonpayable
 
 blast: constant(address) = 0x4300000000000000000000000000000000000002
 
@@ -84,8 +89,17 @@ def __init__(_droplet: address, _drip: address, _dao: address):
 
     self.auction.settled = True
 
-    #Blast(blast).configureClaimableGas()
-    #Blast(blast).configureGovernor(_dao)
+    BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
+    BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
+
+    IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+
+@external
+def claim_money(account: address):
+    assert msg.sender == self.dao, "NOT OWNER"
+
+    BLAST(0x4300000000000000000000000000000000000002).claimAllYield(self, account)
+    BLAST(0x4300000000000000000000000000000000000002).claimAllGas(self, account)
 
 ################################################################
 #                           AUCTION                            #
@@ -111,6 +125,8 @@ def start_auction():
 
 @external
 def start_next_auction():
+    if not self.auction.settled:
+        self._settle_auction()
     assert self.auction.settled, "Auction not settled"
     if GENESIS + FREE_FLOW_DURATION > block.timestamp:
         self.start_auction()
@@ -159,8 +175,8 @@ def bid(droplet_id: uint256):
 
     log Bid(msg.sender, msg.value, droplet_id)
 
-@external
-def settle_auction():
+@internal
+def _settle_auction():
     _auction: Auction = self.auction
 
     assert _auction.end_time < block.timestamp, "DropletFaucet: Auction has not ended"
@@ -195,3 +211,6 @@ def settle_auction():
 
     log Settled(_auction.dropletId, _auction.bidder, _auction.amount)
 
+@external
+def settle_auction():
+    self._settle_auction()
