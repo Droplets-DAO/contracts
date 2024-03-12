@@ -62,10 +62,10 @@ def __init__(droplet_nft_address: address):
   DOMAIN_SEPARATOR = keccak256(_abi_encode("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)", keccak256("DRIP Token"), keccak256("1"), chain.id, self))
   droplet_nft = droplet_nft_address
 
-  BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
-  BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
+  #BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
+  #BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
 
-  IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+  #IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
 
   fee_controller = msg.sender
 
@@ -180,24 +180,26 @@ def preview_mint(id: uint256, to: address) -> uint256:
   last_claimed: uint256 = self.last_claimed_at[id]
   assert last_claimed != 0, "Token not initialized"
   time_elapsed: uint256 = block.timestamp - last_claimed
-  days_elapsed: uint256 = time_elapsed // 86400
+  days_elapsed: uint256 = time_elapsed / 86400
   remainder: uint256 = time_elapsed % 86400
 
   total_supply: uint256 = Droplet(droplet_nft).totalSupply()
   
   tokens_owed: uint256 = 0
 
-  for i in range(days_elapsed):
-    _total_supply = total_supply - i
+  for i in range(1, 365):
+    if i > days_elapsed:
+      break
+    _total_supply: uint256 = total_supply - i
     tokens_owed += (96 * 10 ** 18) / _total_supply
 
-  tokens_owed += (96 * 10 ** 18) * remainder / 86400
+  tokens_owed += (96 * 10 ** 18) * remainder / 86400 / total_supply
 
-  return amount
+  return tokens_owed
 
 
 @external
-def mint(id: uint256, to: address):
+def mint(id: uint256, to: address) -> uint256:
   """
     @notice Mint new tokens
     @param to The address to mint the tokens to
@@ -206,22 +208,26 @@ def mint(id: uint256, to: address):
   last_claimed: uint256 = self.last_claimed_at[id]
   assert last_claimed != 0, "Token not initialized"
   time_elapsed: uint256 = block.timestamp - last_claimed
-  days_elapsed: uint256 = time_elapsed // 86400
+  days_elapsed: uint256 = time_elapsed / 86400
   remainder: uint256 = time_elapsed % 86400
 
   total_supply: uint256 = Droplet(droplet_nft).totalSupply()
   
   tokens_owed: uint256 = 0
 
-  for i in range(days_elapsed):
-    _total_supply = total_supply - i
+  for i in range(1, 365):
+    if i > days_elapsed:
+      break
+    _total_supply: uint256 = total_supply - i
     tokens_owed += (96 * 10 ** 18) / _total_supply
 
-  tokens_owed += (96 * 10 ** 18) * (remainder / 86400) / total_supply
+  tokens_owed += (96 * 10 ** 18) * remainder / 86400 / total_supply
 
   self.last_claimed_at[id] = block.timestamp
 
-  self.balanceOf[to] = unsafe_add(self.balanceOf[to], amount)
-  self.totalSupply = unsafe_add(self.totalSupply, amount)
+  self.balanceOf[to] = unsafe_add(self.balanceOf[to], tokens_owed)
+  self.totalSupply = unsafe_add(self.totalSupply, tokens_owed)
 
-  log Transfer(empty(address), to, amount)
+  log Transfer(empty(address), to, tokens_owed)
+
+  return tokens_owed

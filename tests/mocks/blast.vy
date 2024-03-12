@@ -5,5 +5,9 @@ def configureClaimableGas():
     return
 
 @external
-def configureGovernor(governor: address):
+def configureClaimableYield(governor: address):
+    return
+
+@external
+def configurePointsOperator(pointsOperator: address):
     return

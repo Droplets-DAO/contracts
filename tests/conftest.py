@@ -19,16 +19,17 @@ def admin(accounts) -> Any:
 def blast(admin):
     with boa.env.prank(admin):
         blast = boa.load_partial('tests/mocks/blast.vy')
-        #boa.env.vm.state.set_code("0x4300000000000000000000000000000000000002", blast)
+        blast.at("0x4300000000000000000000000000000000000002")
+        blast.at("0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800")
         return blast
     
 @pytest.fixture(scope="session")
-def droplet_nft(admin):
+def droplet_nft(admin, blast):
     with boa.env.prank(admin):
         return boa.load('src/droplet_nft.vy')
 
 @pytest.fixture(scope="session")
-def drip(admin, droplet_nft):
+def drip(admin, droplet_nft, blast):
     with boa.env.prank(admin):
         return boa.load('src/drip.vy', droplet_nft.address)
 

@@ -72,10 +72,10 @@ def __init__():
     name = "Droplet NFT"
     symbol = "DROP"
 
-    BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
-    BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
+    #BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
+    #BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
 
-    IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+    #IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
 
     self.owner = msg.sender
     self.minters[msg.sender] = True
