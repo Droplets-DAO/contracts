@@ -67,7 +67,7 @@ struct Auction:
     settled: bool
 
 auction: public(Auction)
-last_settled_auction: uint256
+last_settled_auction: public(uint256)
 
 drip_token: public(immutable(ERC20))
 droplet: public(immutable(address))
@@ -134,11 +134,15 @@ def start_next_auction():
         assert self.last_settled_auction + (86400 * 3) < block.timestamp, "Faucet is on cooldown"
         time_since: uint256 = block.timestamp - self.last_settled_auction
 
-        total_per_day: uint256 = Droplet(droplet).totalSupply() * DRIP_PER_DROPLET
-        # Price to start the next auction is equal to 30% of the total drip generated in the past day
-        # decaying linearly over the next 4 days 
-        thirty_percent: uint256 = (total_per_day * 30) / 100
-        price: uint256 = thirty_percent - (thirty_percent * time_since) / (86400 * 4)
+        price: uint256 = 96 * 10 ** 18
+        if time_since > 86400 * 5:
+            price = 48 * 10 ** 18
+
+        if time_since > 86400 * 7:
+            price = 12 * 10 ** 18
+
+        if time_since > 86400 * 10:
+            price = 0
 
         if price > 0:
             drip_token.transferFrom(msg.sender, self, price)

@@ -49,6 +49,15 @@ allowance: public(HashMap[address, HashMap[address, uint256]])
 nonces: public(HashMap[address, uint256])
 
 ################################################################
+#                       TOKENOMICS MATH                        #
+################################################################
+
+# Amount of Drip an NFT would have accumulated from Day One
+GLOBAL_SUMMATION: public(uint256)
+# Tracks tokenId to Drip claimed
+total_claimed: public(HashMap[uint256, uint256])
+
+################################################################
 #                         CONSTRUCTOR                          #
 ################################################################
 
@@ -161,41 +170,31 @@ def permit(owner: address, spender: address, amount: uint256, deadline: uint256,
 ################################################################
 #                          EMISSIONS                           #
 ################################################################
-last_claimed_at: public(HashMap[uint256, uint256])
 
 @external
 def init_id(tokenId: uint256):
   assert msg.sender == droplet_nft, "Only Droplet can init nfts"
-  self.last_claimed_at[tokenId] = block.timestamp
+  sum: uint256 = self.GLOBAL_SUMMATION
+
+  sum += (96 * 10 ** 18) / Droplet(droplet_nft).totalSupply()
+
+  self.total_claimed[tokenId] = sum
+  self.GLOBAL_SUMMATION = sum
 
 @view
 @external
-def preview_mint(id: uint256, to: address) -> uint256:
+def preview_mint(id: uint256) -> uint256:
   """
     @notice Preview the amount of tokens that can be minted
-    @param to The address to mint the tokens to
-
     @return The amount of tokens that can be minted
   """
-  last_claimed: uint256 = self.last_claimed_at[id]
-  assert last_claimed != 0, "Token not initialized"
-  time_elapsed: uint256 = block.timestamp - last_claimed
-  days_elapsed: uint256 = time_elapsed / 86400
-  remainder: uint256 = time_elapsed % 86400
+  total_claimed: uint256 = self.total_claimed[id]
+  assert total_claimed != 0, "Token not initialized"
 
-  total_supply: uint256 = Droplet(droplet_nft).totalSupply()
-  
-  tokens_owed: uint256 = 0
+  sum: uint256 = self.GLOBAL_SUMMATION
+  amount_owed: uint256 = sum - total_claimed
 
-  for i in range(1, 365):
-    if i > days_elapsed:
-      break
-    _total_supply: uint256 = total_supply - i
-    tokens_owed += (96 * 10 ** 18) / _total_supply
-
-  tokens_owed += (96 * 10 ** 18) * remainder / 86400 / total_supply
-
-  return tokens_owed
+  return amount_owed
 
 
 @external
@@ -205,29 +204,16 @@ def mint(id: uint256, to: address) -> uint256:
     @param to The address to mint the tokens to
   """
   assert msg.sender == ERC721(droplet_nft).ownerOf(id), "Only the owner of the NFT can mint"
-  last_claimed: uint256 = self.last_claimed_at[id]
-  assert last_claimed != 0, "Token not initialized"
-  time_elapsed: uint256 = block.timestamp - last_claimed
-  days_elapsed: uint256 = time_elapsed / 86400
-  remainder: uint256 = time_elapsed % 86400
+  total_claimed: uint256 = self.total_claimed[id]
+  assert total_claimed != 0, "Token not initialized"
 
-  total_supply: uint256 = Droplet(droplet_nft).totalSupply()
-  
-  tokens_owed: uint256 = 0
+  sum: uint256 = self.GLOBAL_SUMMATION
+  amount_owed: uint256 = sum - total_claimed
+  self.total_claimed[id] = sum
 
-  for i in range(1, 365):
-    if i > days_elapsed:
-      break
-    _total_supply: uint256 = total_supply - i
-    tokens_owed += (96 * 10 ** 18) / _total_supply
+  self.balanceOf[to] = unsafe_add(self.balanceOf[to], amount_owed)
+  self.totalSupply = unsafe_add(self.totalSupply, amount_owed)
 
-  tokens_owed += (96 * 10 ** 18) * remainder / 86400 / total_supply
+  log Transfer(empty(address), to, amount_owed)
 
-  self.last_claimed_at[id] = block.timestamp
-
-  self.balanceOf[to] = unsafe_add(self.balanceOf[to], tokens_owed)
-  self.totalSupply = unsafe_add(self.totalSupply, tokens_owed)
-
-  log Transfer(empty(address), to, tokens_owed)
-
-  return tokens_owed
+  return amount_owed

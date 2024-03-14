@@ -97,23 +97,21 @@ def test_start_after_free_flow(mock_drip, drip, droplet_nft, mock_faucet, admin,
     droplet_nft.init_drip(drip, sender=admin)
 
     faucet = mock_faucet
-    boa.env.set_balance(admin, 1000 * 10 ** 18)
     genesis = faucet.GENESIS()
     free_flow = faucet.FREE_FLOW_DURATION()
 
-    boa.env.time_travel(genesis + free_flow + 1)
-    faucet.start_next_auction(sender=admin)
+    boa.env.time_travel(free_flow - 86405)
+
+    faucet.start_next_auction(sender=accounts[5])
+    boa.env.set_balance(admin, 1000 * 10 ** 18)
     faucet.bid(1, value=(1* 10 ** 18), sender=admin)
-    boa.env.time_travel(86401)
+    time = boa.env.vm.patch.timestamp
+    boa.env.time_travel(time + 86401)
     faucet.settle_auction(sender=admin)
 
-    with boa.reverts("Faucet is on cooldown"):
-        faucet.start_next_auction(sender=admin)
+    assert faucet.last_settled_auction() == boa.env.vm.patch.timestamp
 
-    boa.env.time_travel((86400 * 3) + 100)
-    mock_drip.mint(admin, 1000 * 10 ** 18, sender=admin)
-    mock_drip.approve(faucet.address, 1000 * 10 ** 18, sender=admin)
-    faucet.start_next_auction(sender=admin)
-    faucet.bid(2, value=(1* 10 ** 18), sender=admin)
-    boa.env.time_travel(86401)
-    faucet.settle_auction(sender=admin)
+    time = boa.env.vm.patch.timestamp
+    boa.env.time_travel(time + 86401)
+
+    faucet.start_next_auction(sender=accounts[5])

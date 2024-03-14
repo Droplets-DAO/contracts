@@ -71,22 +71,20 @@ def test_tokens_are_minted_as_expected(droplet_nft, drip, admin):
     id = droplet_nft.mint(admin, sender=admin)
     id2 = droplet_nft.mint(admin, sender=admin)
     id3 = droplet_nft.mint(admin, sender=admin)
+    id4 = droplet_nft.mint(admin, sender=admin)
 
     with boa.env.prank(droplet_nft.address):
         drip.init_id(id)
+        summation = drip.GLOBAL_SUMMATION()
         drip.init_id(id2)
+        assert drip.GLOBAL_SUMMATION() > summation 
+        summation = drip.GLOBAL_SUMMATION()
         drip.init_id(id3)
+        assert drip.GLOBAL_SUMMATION() > summation
+        drip.init_id(id4)
 
     boa.env.time_travel(86400)
     
-    assert drip.mint(id, admin, sender=admin) == (96 * 10 ** 18) / (droplet_nft.totalSupply()-1)
-    assert drip.mint(id2, admin, sender=admin) == (96 * 10 ** 18) / (droplet_nft.totalSupply()-1)
-    assert drip.mint(id3, admin, sender=admin) == (96 * 10 ** 18) / (droplet_nft.totalSupply()-1)
-
-    boa.env.time_travel(86400 * 2)
-
-    assert drip.mint(id, admin, sender=admin) == ((96 * 10 ** 18) / (droplet_nft.totalSupply()-1)) + ((96 * 10 ** 18) / (droplet_nft.totalSupply()-2))
-
-    boa.env.time_travel(86400 / 2)
-
-    assert drip.mint(id, admin, sender=admin) == 24000000000000000000
+    assert drip.mint(id, admin, sender=admin) == 72000000000000000000 # Rewards after 4 days
+    assert drip.mint(id2, admin, sender=admin) == 48000000000000000000 # Rewards after 3 days
+    assert drip.mint(id3, admin, sender=admin) == 24000000000000000000 # Rewards after 2 days
