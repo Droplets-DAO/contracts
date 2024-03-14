@@ -76,6 +76,10 @@ def __init__(droplet_nft_address: address):
 
   fee_controller = msg.sender
 
+@external
+def change_fee_controller(new_controller: address):
+    assert msg.sender == fee_controller, "NOT OWNER"
+    fee_controller = new_controller
 
 @external
 def claim_money(account: address):
