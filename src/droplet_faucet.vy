@@ -95,6 +95,11 @@ def __init__(_droplet: address, _drip: address, _dao: address):
     #IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
 
 @external
+def migrate_dao(new_dao: address):
+    assert msg.sender == self.dao, "NOT OWNER"
+    self.dao = new_dao
+
+@external
 def claim_money(account: address):
     assert msg.sender == self.dao, "NOT OWNER"
 

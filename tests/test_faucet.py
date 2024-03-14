@@ -95,23 +95,58 @@ def test_start_after_free_flow(mock_drip, drip, droplet_nft, mock_faucet, admin,
         Test a basic auction scenario
     """
     droplet_nft.init_drip(drip, sender=admin)
-
     faucet = mock_faucet
     genesis = faucet.GENESIS()
     free_flow = faucet.FREE_FLOW_DURATION()
 
-    boa.env.time_travel(free_flow - 86405)
+    time = boa.env.vm.patch.timestamp
+    boa.env.time_travel(((genesis + free_flow) - 86405) - time)
 
     faucet.start_next_auction(sender=accounts[5])
     boa.env.set_balance(admin, 1000 * 10 ** 18)
-    faucet.bid(1, value=(1* 10 ** 18), sender=admin)
+    faucet.bid(droplet_nft.totalSupply(), value=(1* 10 ** 18), sender=admin)
     time = boa.env.vm.patch.timestamp
-    boa.env.time_travel(time + 86401)
+    boa.env.time_travel(86401)
     faucet.settle_auction(sender=admin)
 
     assert faucet.last_settled_auction() == boa.env.vm.patch.timestamp
 
-    time = boa.env.vm.patch.timestamp
-    boa.env.time_travel(time + 86401)
+    assert genesis + free_flow > boa.env.vm.patch.timestamp
 
-    faucet.start_next_auction(sender=accounts[5])
+    mock_drip.mint(admin, 1000 * 10 ** 18, sender=admin)
+
+    with boa.env.anchor():
+        boa.env.time_travel(86400 * 3 + 1000)
+        assert genesis + free_flow < boa.env.vm.patch.timestamp
+        mock_drip.approve(faucet.address, 96 * 10 ** 18, sender=admin)
+        initial_balance = mock_drip.balanceOf(admin)
+        faucet.start_next_auction(sender=admin)
+        assert mock_drip.balanceOf(admin) == initial_balance - 96 * 10 ** 18
+
+    with boa.env.anchor():
+        boa.env.time_travel(86400 * 5 + 1000)
+        assert genesis + free_flow < boa.env.vm.patch.timestamp
+        mock_drip.approve(faucet.address, 48 * 10 ** 18, sender=admin)
+        initial_balance = mock_drip.balanceOf(admin)
+        faucet.start_next_auction(sender=admin)
+        assert mock_drip.balanceOf(admin) == initial_balance - 48 * 10 ** 18
+
+    with boa.env.anchor():
+        boa.env.time_travel(86400 * 7 + 1000)
+        assert genesis + free_flow < boa.env.vm.patch.timestamp
+        mock_drip.approve(faucet.address, 12 * 10 ** 18, sender=admin)
+        initial_balance = mock_drip.balanceOf(admin)
+        faucet.start_next_auction(sender=admin)
+        assert mock_drip.balanceOf(admin) == initial_balance - 12 * 10 ** 18
+        
+    with boa.env.anchor():
+        boa.env.time_travel(86400 * 10 + 1000)
+        assert genesis + free_flow < boa.env.vm.patch.timestamp
+        faucet.start_next_auction(sender=admin)
+
+
+    with boa.env.anchor():
+        boa.env.time_travel(86400 * 15 + 1000)
+        assert genesis + free_flow < boa.env.vm.patch.timestamp
+        faucet.start_next_auction(sender=admin)
+
