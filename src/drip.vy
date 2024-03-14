@@ -46,7 +46,6 @@ totalSupply: public(uint256)
 
 balanceOf: public(HashMap[address, uint256])
 allowance: public(HashMap[address, HashMap[address, uint256]])
-nonces: public(HashMap[address, uint256])
 
 ################################################################
 #                       TOKENOMICS MATH                        #
@@ -68,13 +67,12 @@ fee_controller: public(immutable(address))
 def __init__(droplet_nft_address: address):
   name = "Drip Token"
   symbol = "DRIP"
-  DOMAIN_SEPARATOR = keccak256(_abi_encode("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)", keccak256("DRIP Token"), keccak256("1"), chain.id, self))
   droplet_nft = droplet_nft_address
 
-  #BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
-  #BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
+  BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
+  BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
 
-  #IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+  IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
 
   fee_controller = msg.sender
 
@@ -85,12 +83,6 @@ def claim_money(account: address):
 
     BLAST(0x4300000000000000000000000000000000000002).claimAllYield(self, account)
     BLAST(0x4300000000000000000000000000000000000002).claimAllGas(self, account)
-
-# @dev Constant used as part of the ECDSA recovery function.
-_MALLEABILITY_THRESHOLD: constant(bytes32) = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
-_TYPE_HASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-_PERMIT_TYPE_HASH: constant(bytes32) = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
-DOMAIN_SEPARATOR: public(immutable(bytes32))
 
 ################################################################
 #                   ERC20 STANDARD FUNCTIONS                   #
@@ -143,29 +135,6 @@ def transferFrom(_from: address, to: address, amount: uint256) -> bool:
   log Transfer(_from, to, amount)
 
   return True
-
-################################################################
-#                           EIP-2612                           #
-################################################################
-
-@external
-def permit(owner: address, spender: address, amount: uint256, deadline: uint256, v: uint8, r: bytes32, s: bytes32):
-  assert block.timestamp <= deadline, "ERC20Permit: expired deadline"
-
-  current_nonce: uint256 = self.nonces[owner]
-  self.nonces[owner] = unsafe_add(current_nonce, 1)
-
-  struct_hash: bytes32 = keccak256(_abi_encode(_PERMIT_TYPE_HASH, owner, spender, amount, current_nonce, deadline))
-  hash: bytes32 = keccak256(concat(b"\x19\x01", DOMAIN_SEPARATOR, struct_hash))
-
-  assert convert(s, uint256) <= convert(_MALLEABILITY_THRESHOLD, uint256), "ECDSA: invalid signature `s` value"
-
-  signer: address = ecrecover(hash, v, r, s)
-  assert signer != empty(address), "ECDSA: invalid signature"
-  assert signer == owner, "ERC20Permit: invalid signature"
-
-  self.allowance[owner][spender] = amount
-  log Approval(owner, spender, amount)
 
 ################################################################
 #                          EMISSIONS                           #

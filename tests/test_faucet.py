@@ -75,9 +75,16 @@ def test_faucet(droplet_nft, drip, faucet, admin, accounts):
 
     boa.env.time_travel(86399)
 
+    admin_bal = boa.env.get_balance(admin)
+
     faucet.bid(1, value=(4* 10 ** 18), sender=admin)
 
+    assert admin_bal - 4 * 10 ** 18 == boa.env.get_balance(admin)
+
     faucet.bid(1, value=(5* 10 ** 18), sender=accounts[0])
+
+    assert admin_bal == boa.env.get_balance(admin)
+
     (droplet_id, amount, start_time, d_end_time, bidder, settled) = faucet.auction()
     assert d_end_time - end_time == (60 * 5)
 
@@ -138,7 +145,7 @@ def test_start_after_free_flow(mock_drip, drip, droplet_nft, mock_faucet, admin,
         initial_balance = mock_drip.balanceOf(admin)
         faucet.start_next_auction(sender=admin)
         assert mock_drip.balanceOf(admin) == initial_balance - 12 * 10 ** 18
-        
+
     with boa.env.anchor():
         boa.env.time_travel(86400 * 10 + 1000)
         assert genesis + free_flow < boa.env.vm.patch.timestamp
