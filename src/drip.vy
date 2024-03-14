@@ -61,7 +61,7 @@ total_claimed: public(HashMap[uint256, uint256])
 ################################################################
 
 droplet_nft: public(immutable(address))
-fee_controller: public(immutable(address))
+fee_controller: public(address)
 
 @external
 def __init__(droplet_nft_address: address):
@@ -74,16 +74,16 @@ def __init__(droplet_nft_address: address):
 
   IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
 
-  fee_controller = msg.sender
+  self.fee_controller = msg.sender
 
 @external
 def change_fee_controller(new_controller: address):
-    assert msg.sender == fee_controller, "NOT OWNER"
-    fee_controller = new_controller
+    assert msg.sender == self.fee_controller, "NOT OWNER"
+    self.fee_controller = new_controller
 
 @external
 def claim_money(account: address):
-    assert msg.sender == fee_controller, "NOT OWNER"
+    assert msg.sender == self.fee_controller, "NOT OWNER"
 
     BLAST(0x4300000000000000000000000000000000000002).claimAllYield(self, account)
     BLAST(0x4300000000000000000000000000000000000002).claimAllGas(self, account)
@@ -149,7 +149,7 @@ def init_id(tokenId: uint256):
   assert msg.sender == droplet_nft, "Only Droplet can init nfts"
   sum: uint256 = self.GLOBAL_SUMMATION
 
-  sum += (96 * 10 ** 18) / Droplet(droplet_nft).totalSupply()
+  sum += (33000 * 10 ** 18) / Droplet(droplet_nft).totalSupply()
 
   self.total_claimed[tokenId] = sum
   self.GLOBAL_SUMMATION = sum

@@ -139,12 +139,12 @@ def start_next_auction():
         assert self.last_settled_auction + (86400 * 3) < block.timestamp, "Faucet is on cooldown"
         time_since: uint256 = block.timestamp - self.last_settled_auction
 
-        price: uint256 = 96 * 10 ** 18
+        price: uint256 = 33000 * 10 ** 18
         if time_since > 86400 * 5:
-            price = 48 * 10 ** 18
+            price = 15000 * 10 ** 18
 
         if time_since > 86400 * 7:
-            price = 12 * 10 ** 18
+            price = 7500 * 10 ** 18
 
         if time_since > 86400 * 10:
             price = 0
