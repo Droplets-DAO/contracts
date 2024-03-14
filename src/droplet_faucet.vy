@@ -77,7 +77,6 @@ dao_treasure: public(uint256)
 
 GENESIS: public(immutable(uint256))
 FREE_FLOW_DURATION: public(constant(uint256)) = 50 * 86400 # 50 days
-DRIP_PER_DROPLET: public(constant(uint256)) = 100
 
 @external
 def __init__(_droplet: address, _drip: address, _dao: address):
