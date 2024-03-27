@@ -75,16 +75,34 @@ def __init__():
     BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
     BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
 
-    IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+    IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(0x3f2e5ED8d1Ff052553b0837d5eC7ceca952C19Cd)
 
-    self.owner = msg.sender
+    self.owner = 0x0e0A927fE11353d493DA8444490938DAe8FDAa7e
     self.minters[msg.sender] = True
 
 @external
 def claim_premints():
     assert not self.claimed_premints, "ALREADY CLAIMED"
-    for i in range(6):
-        self._mint(msg.sender)
+    
+
+
+
+
+    self._mint(0x75d4bdBf6593ed463e9625694272a0FF9a6D346F)
+    self._mint(0x3f2e5ED8d1Ff052553b0837d5eC7ceca952C19Cd)
+    self._mint(0x8907d622d48801f9B5918Ef619c159b33BFC5208)
+    self._mint(0x8907d622d48801f9B5918Ef619c159b33BFC5208)
+    self._mint(0x3f2e5ED8d1Ff052553b0837d5eC7ceca952C19Cd)
+    self._mint(0x3f2e5ED8d1Ff052553b0837d5eC7ceca952C19Cd)
+    self._mint(0x8907d622d48801f9B5918Ef619c159b33BFC5208)
+    self._mint(0xc27FD9D5113dE19EA89D0265Be9FD93F35f052c8)
+    self._mint(0xE8517418753eAe2c158ae413255f7DfedF18B2E4)
+    self._mint(0x0ca85b489A1276eF7042F1d032D0eF3831EaF4ca)
+    self._mint(0x0ca85b489A1276eF7042F1d032D0eF3831EaF4ca)
+    self._mint(0x0ca85b489A1276eF7042F1d032D0eF3831EaF4ca)
+    self._mint(0xbcD2E843FE41Da351cDe58bceB40D69242b229Db)
+    self._mint(0x90649222cBD82Ea2fbD6f99848Cf474dac51F71b)
+    self._mint(0x90649222cBD82Ea2fbD6f99848Cf474dac51F71b)
 
     self.claimed_premints = True
 

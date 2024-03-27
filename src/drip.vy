@@ -72,9 +72,9 @@ def __init__(droplet_nft_address: address):
   BLAST(0x4300000000000000000000000000000000000002).configureClaimableGas()
   BLAST(0x4300000000000000000000000000000000000002).configureClaimableYield()
 
-  IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(msg.sender)
+  IBLASTPointsOperator(0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800).configurePointsOperator(0x3f2e5ED8d1Ff052553b0837d5eC7ceca952C19Cd)
 
-  self.fee_controller = msg.sender
+  self.fee_controller = 0x0e0A927fE11353d493DA8444490938DAe8FDAa7e
 
 @external
 def change_fee_controller(new_controller: address):
